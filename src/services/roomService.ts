@@ -1,5 +1,6 @@
 import { Room, Player } from "../types/room";
 import client from "../db/init.redis";
+import { STATUS_HOST, STATUS_ROOM } from "../constant";
 
 // Private storage
 const rooms = new Map<string, Room>();
@@ -25,7 +26,7 @@ export const createRoom = async (
         id: oldRoomId,
         host: player,
         players: [],
-        status: "waiting",
+        status: STATUS_ROOM.WAITING,
         createdAt: new Date(),
       };
     }
@@ -37,7 +38,7 @@ export const createRoom = async (
       id: roomId,
       host: player,
       players: [],
-      status: "waiting",
+      status: STATUS_ROOM.WAITING,
       createdAt: new Date(),
     };
     rooms.set(roomId, room);
@@ -51,14 +52,28 @@ export const getRoom = (roomId: string): Room | undefined => {
   return rooms.get(roomId);
 };
 
-export const leaveRoom = (roomId: string, playerId: string): boolean => {
+export const leaveRoom = (
+  roomId: string,
+  playerId: string,
+  statusHost: string
+): boolean => {
   const room = rooms.get(roomId);
 
   if (!room) {
     return false;
   }
 
-  room.players = room.players.filter((p) => p.socketId !== playerId);
+  if (room.host.socketId === playerId && statusHost === STATUS_HOST.LEAVE) {
+    return true;
+  }
+
+  if (room.status === STATUS_ROOM.WAITING) {
+    if (room.host.socketId === playerId && statusHost === STATUS_HOST.KEEP) {
+      return false;
+    }
+    // Nếu room đang ở trạng thái chờ, xóa người đó ra khỏi room
+    room.players = room.players.filter((p) => p.socketId !== playerId);
+  }
 
   // // Nếu không còn người chơi nào, xóa room
   // if (room.players.length === 0) {

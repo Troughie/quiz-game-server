@@ -8,6 +8,7 @@ import {
 } from "../services/roomService";
 import { Player } from "../types/room";
 import { splitPin } from "../utils/index";
+import { STATUS_ROOM } from "../constant";
 
 export const initializeSocket = (httpServer: HttpServer) => {
   const io = new Server(httpServer, {
@@ -75,8 +76,8 @@ export const initializeSocket = (httpServer: HttpServer) => {
     });
 
     // Rời room
-    socket.on("leaveRoom", (roomId: string) => {
-      const success = leaveRoom(roomId, socket.id);
+    socket.on("leaveRoom", (roomId: string, status: string) => {
+      const success = leaveRoom(roomId, socket.id, status);
 
       if (success) {
         socket.leave(roomId);
@@ -95,6 +96,14 @@ export const initializeSocket = (httpServer: HttpServer) => {
       }
     });
 
+    socket.on("play", (roomId: string) => {
+      const room = getRoom(roomId);
+      if (room) {
+        room.status = STATUS_ROOM.PLAYING;
+        io.to(roomId).emit("roomUpdate", room);
+      }
+    });
+
     // Xử lý ngắt kết nối
     socket.on("disconnect", () => {
       const rooms = getAllRooms();
@@ -103,7 +112,7 @@ export const initializeSocket = (httpServer: HttpServer) => {
           return;
         }
         if (room.players.some((p) => p.socketId === socket.id)) {
-          leaveRoom(room.id, socket.id);
+          leaveRoom(room.id, socket.id, "");
           const updatedRoom = getRoom(room.id);
           if (updatedRoom) {
             io.to(room.id).emit("roomUpdate", updatedRoom);

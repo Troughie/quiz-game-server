@@ -1,3 +1,4 @@
+import { STATUS_ROOM } from "../constant";
 export interface Player {
   socketId?: string;
   id: string;
@@ -10,7 +11,7 @@ export interface Room {
   id: string;
   host: Player;
   players: Player[];
-  status: "waiting" | "playing" | "finished";
+  status: STATUS_ROOM;
   isWhiteList?: boolean;
   createdAt: Date;
 }

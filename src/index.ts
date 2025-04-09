@@ -6,6 +6,7 @@ import "express-async-errors";
 import routes from "./routes";
 import { initializeSocket } from "./socket";
 import { errorHandler } from "./Error/handle";
+import { client } from "./db/init.mongodb";
 
 // Load environment variables
 dotenv.config();
@@ -13,6 +14,16 @@ dotenv.config();
 const app = express();
 const httpServer = createServer(app);
 const port = process.env.PORT || 3000;
+
+//dbs
+client
+  .connect()
+  .then(() => {
+    console.log("Connected to MongoDB");
+  })
+  .catch((error) => {
+    console.error("Error connecting to MongoDB:", error);
+  });
 
 // Initialize Socket.IO
 const io = initializeSocket(httpServer);
